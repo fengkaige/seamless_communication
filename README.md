@@ -1,6 +1,9 @@
 
 # 注意事项
-`src/seamless_communication/models/unity/char_tokenizer.py` 中被修改成了固定路径加载模型
+## 1. 源码修改
+下面2个文件中的部分代码被修改成了固定路径，用来加载模型
+`src/seamless_communication/models/unity/char_tokenizer.py`
+`venv_seamless/lib/python3.11/site-packages/fairseq2/models/utils/generic_loaders.py`文件中`TokenizerLoaderBase`类
 
 详见 [002_main_demo](./docs/adapt/002_main_demo.md)
 
