@@ -103,9 +103,24 @@ class UnitYCharTokenizerLoader:
 
         uri = card.field("char_tokenizer").as_uri()
 
-        pathname = self.download_manager.download_tokenizer(
-            uri, card.name, force=force, progress=progress
-        )
+
+        print("="*10, "change file /home/fengkaige/codespace/seamless/seamless_communication/src/seamless_communication/models/unity/char_tokenizer.py  UnitYCharTokenizerLoader")
+        print("替换path为绝对路径")
+        print(uri, card.name)
+        # import pdb; pdb.set_trace()
+        # >>>>>>>>>>>>
+        path_zoo = {
+            "https://huggingface.co/facebook/seamless-m4t-v2-large/resolve/main/spm_char_lang38_tc.model_seamlessM4T_v2_large" : "/home/fengkaige/codespace/seamless/seamless-streaming-card/spm_char_lang38_tc.model"
+        }
+        if str(uri) + "_" + str(card.name) in path_zoo.keys():
+            pathname = path_zoo[str(uri) + "_" + str(card.name)]
+        else:
+            raise NotImplementedError("No path for {} {}".format(uri, card.name))
+        # ------------
+        # pathname = self.download_manager.download_tokenizer(
+        #     uri, card.name, force=force, progress=progress
+        # )
+        # <<<<<<<<<<<<
 
         return CharTokenizer(pathname)
 
