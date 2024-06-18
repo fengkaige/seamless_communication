@@ -1,4 +1,15 @@
 > *该文件确保main_demo可以成功运行*
+
+# Main Demo 运行方法
+## 1. 搭建环境
+[搭建环境参考](./001_env.md)
+## 2. 运行方法
+source your_venv/bin/activate
+python3 main_demo.py
+
+---
+
+# Main Demo 支持过程记录
 # step 1 : model relay
 - 运行卡在`Downloading the tokenizer of seamless_streaming_unity...`阶段
 - 原因是缺少模型文件 -> 模型文件下载 [huggingface](https://huggingface.co/facebook/seamless-streaming/tree/main)
