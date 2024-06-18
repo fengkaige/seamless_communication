@@ -10,6 +10,6 @@
 # 文档
 - 模型概述 [000_seamless](./docs/adapt/000_seamless.md)
 - 搭建环境 [001_env](./docs/adapt/001_env.md)
-- 运行main_demo: [002_main_demo](./docs/adapt/002_main_demo.md)
+- 运行main_demo [002_main_demo](./docs/adapt/002_main_demo.md)
 - main_demo数据流
 
