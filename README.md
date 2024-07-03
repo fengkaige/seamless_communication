@@ -10,7 +10,7 @@ python3.11 main_demo.py
 - 模型概述 [000_seamless](./docs/adapt/000_seamless.md)
 - 搭建环境 [001_env](./docs/adapt/001_env.md)
 - 运行main_demo [002_main_demo](./docs/adapt/002_main_demo.md)
-- main_demo数据流
+- main_demo数据流 [003_data_stream](./docs/adapt/003_data_stream.md)
 
 # 注意事项
 ## 1. 源码修改备注
