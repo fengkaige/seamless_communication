@@ -136,6 +136,12 @@ class OnlineFeatureExtractorAgent(SpeechToSpeechAgent):  # type: ignore
             "sample_rate": self.sample_rate,
         }
 
+        print("[Debug] class OnlineFeatureExtractorAgent")
+        # import pdb; pdb.set_trace()
+        """
+            self.convert_to_fbank
+            type : <class 'fairseq2.data.audio.WaveformToFbankConverter'>
+        """
         output = self.convert_to_fbank(data)["fbank"]
 
         return WriteAction(

@@ -11,6 +11,7 @@ python3.11 main_demo.py
 - 搭建环境 [001_env](./docs/adapt/001_env.md)
 - 运行main_demo [002_main_demo](./docs/adapt/002_main_demo.md)
 - main_demo数据流 [003_data_stream](./docs/adapt/003_data_stream.md)
+- 存储权重说明文档 [004_model_weight](./docs/adapt/004_save_model_weight.md)
 
 # 注意事项
 ## 1. 源码修改备注
@@ -19,3 +20,4 @@ python3.11 main_demo.py
 `venv_seamless/lib/python3.11/site-packages/fairseq2/models/utils/generic_loaders.py`文件中`TokenizerLoaderBase`类
 
 详见 [002_main_demo](./docs/adapt/002_main_demo.md)
+

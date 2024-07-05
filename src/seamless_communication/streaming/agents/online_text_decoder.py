@@ -218,6 +218,20 @@ class MMATextDecoderAgent(OnlineTextDecoderAgent):  # type: ignore
             ).unsqueeze(0)
 
         encoder_output = states.source
+
+        print("[Debug] class MMATextDecoderAgent func run_decoder")
+        # import pdb; pdb.set_trace()
+        """
+            self.model:
+                type : <class 'seamless_communication.models.monotonic_decoder.model.MonotonicDecoderModel'>
+
+            self.model.decode() process:
+                text_decoder_frontend - model
+                text_decoder - model
+        """
+        # print("type(self.model.decode)", type(self.model.decode))
+        # print("self.model.decode:", self.model.decode)
+
         decoder_output, _, p_choose = self.model.decode(
             target_input, None, encoder_output, None, state_bag=self.state_bag
         )

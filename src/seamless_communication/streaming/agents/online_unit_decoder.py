@@ -102,6 +102,9 @@ class NARUnitYUnitDecoderAgent(GenericAgent):  # type: ignore
             else:
                 return WriteAction("", finished=True)
 
+        print("[Debug] class NARUnitYUnitDecoderAgent :: func policy")
+        # import pdb; pdb.set_trace()
+
         model_output, _, durations = self.model(
             text_decoder_output=states.source,
             text_decoder_padding_mask=None,

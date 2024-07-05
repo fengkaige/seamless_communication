@@ -29,7 +29,7 @@ class Vocoder(Module):
         spkr_list: Union[Optional[List[int]], int] = None,
         dur_prediction: bool = True,
     ) -> Tensor:
-        # TODO: Do we need this backward compatibility, or just update all calling sites? 
+        # TODO: Do we need this backward compatibility, or just update all calling sites?
         if len(units.shape) == 1:
             units = units.unsqueeze(0) # add batch dim
         if isinstance(lang_list, str):
