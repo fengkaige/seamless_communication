@@ -329,6 +329,9 @@ class SileroVADAgent(SpeechToSpeechAgent):  # type: ignore
                 # NOTE: this should never happen, this logic is a safeguard
                 segment = EmptySegment(finished=True)
         else:
+            print("[Debug]SileroVADAgent.policy")
+            # import pdb; pdb.set_trace()
+
             segment = SpeechSegment(
                 content=content.tolist(),
                 finished=is_finished,

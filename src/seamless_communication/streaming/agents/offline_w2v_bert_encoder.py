@@ -182,6 +182,11 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
         if save_offlineWav2VecBertEncoderAgent == ["Flase", "True"][1]:
             msg = "[INFO]save offlineWav2VecBertEncoderAgent"
             print(msg)
+            save_input_output_speech_encoder(
+                self.model,
+                seqs,
+                padding_mask,
+            )
             save_weight_of_encode_speech(self.model)
 
         import os
@@ -264,14 +269,14 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
 
 def save_weight_of_encode_speech(model):
     """
-        调试信息:
-            type model : Class seamless_communication.models.unity.model.UnitYModel
-            type (model.speech_encoder) : <class 'seamless_communication.models.unity.adaptor_block.UnitYEncoderAdaptor'>
+    调试信息:
+        type model : Class seamless_communication.models.unity.model.UnitYModel
+        type (model.speech_encoder) : <class 'seamless_communication.models.unity.adaptor_block.UnitYEncoderAdaptor'>
 
-            model.speech_encoder._modules.keys()
-                odict_keys(['inner', 'inner_layer_norm', 'proj1', 'activation', 'proj2', 'adaptor_layers', 'layer_norm'])
-            model.speech_encoder._modules['inner']._modules.keys()
-                odict_keys(['layers', 'layer_norm'])
+        model.speech_encoder._modules.keys()
+            odict_keys(['inner', 'inner_layer_norm', 'proj1', 'activation', 'proj2', 'adaptor_layers', 'layer_norm'])
+        model.speech_encoder._modules['inner']._modules.keys()
+            odict_keys(['layers', 'layer_norm'])
     """
     # from seamless_communication.src.model_weight_save import save_model_state_dict, save_model_structure
     from model_weight_save import save_model_state_dict, save_model_structure
@@ -284,12 +289,18 @@ def save_weight_of_encode_speech(model):
     # 存储权重
     save_model_state_dict(model.speech_encoder, weight_save_folder, weight_save_name)
     # 存储模型结构
-    save_model_structure(model.speech_encoder, weight_save_folder, weight_save_name)
+    struct_save_name = "encode_speech_structure"
+    save_model_structure(model.speech_encoder, weight_save_folder, struct_save_name)
     # 提示信息
     print("<" * 12, "save weight of encode_speech", "<" * 12)
 
-    print("> Agent3_OfflineWav2VecBertEncoderAgent speech encoder 模型的权重和结构存储完毕 <")
-    import pdb; pdb.set_trace()
+    print(
+        "> Agent3_OfflineWav2VecBertEncoderAgent speech encoder 模型的权重和结构存储完毕 <"
+        "> 继续还是退出 <"
+    )
+    import pdb
+
+    pdb.set_trace()
 
 
 # # 使用gzip压缩二进制文件
@@ -304,3 +315,29 @@ def save_weight_of_encode_speech(model):
 
 #             # 写入CSV文件的信息
 #             csv_writer.writerow([key, tensor.dtype, list(tensor.size())])
+
+
+def save_input_output_speech_encoder(model, seqs, padding_mask):
+    """
+        调试内容
+        type(seqs) : torch.Tensor
+        type(padding_mask) : NoneType
+    """
+    from model_weight_save import save_tensor
+    seqs, padding_mask = model.speech_encoder_frontend(seqs, padding_mask)
+
+    save_dir = "./model_weight/Agent3_OfflineWav2VecBertEncoderAgent_input_output"
+    save_tensor(seqs.cpu(), tensor_name="input_seqs", save_dir=save_dir)
+    ######
+    output_seqs, padding_mask = model.speech_encoder(seqs, padding_mask)  # type: ignore[no-any-return]
+    ######
+    save_tensor(output_seqs.cpu(), tensor_name="output_seqs", save_dir=save_dir)
+    print(
+        "\n> Agent3_OfflineWav2VecBertEncoderAgent speech encoder 模型的输入输出存储完毕 <\n"
+        "> 模型 padding_mask 输入输出为None <\n"
+        "> 继续还是退出 <\n"
+    )
+    import pdb; pdb.set_trace()
+
+
+

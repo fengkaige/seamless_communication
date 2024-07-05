@@ -80,6 +80,25 @@ def save_model_state_dict(model, weight_save_folder: str, weight_save_name: str)
                     f"{state_dict_total_size/1024/1024/1024}GB",
                 ]
             )
+            # 存储列说明
+            csv_writer.writerow(
+                [
+                    "列说明:",
+                ]
+            )
+            csv_writer.writerow(
+                [
+                    "Key - 模型权重的含义",
+                    "Data Type - 模型权重的数据类型",
+                    "Shape - 模型权重的形状",
+                    "Total_Bytes(B) - 模型权重的总字节数",
+                    "Total_Bytes(KB) - 模型权重的总字节数",
+                    "Total_Bytes(MB) - 模型权重的总字节数",
+                    "Acc_Bytes(B) - 模型到当前权重累计的总字节数",
+                    "Acc_Bytes(KB) - 模型到当前权重累计的总字节数",
+                    "Acc_Bytes(MB) - 模型到当前权重累计的总字节数",
+                ]
+            )
 
 
 def save_model_structure(model, model_save_folder, model_save_name="model"):
@@ -111,3 +130,41 @@ def create_directory(path):
         print(f"Directory '{path}' created.")
     else:
         print(f"Directory '{path}' already exists.")
+
+
+def save_tensor(tensor, tensor_name, save_dir='tensors'):
+
+    import torch
+    import numpy as np
+    import os
+
+    # 创建保存目录
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    # 获取tensor信息
+    shape = tensor.shape
+    dtype = tensor.dtype
+
+    # 构造文件名
+    shape_str = 'x'.join(map(str, shape))
+    dtype_str = str(dtype).split('.')[1]  # 去掉前缀 'torch.'
+    base_filename = f"{tensor_name}_shape-{shape_str}_dtype-{dtype_str}"
+
+    # 二进制文件名
+    bin_filename = os.path.join(save_dir, f"{base_filename}.bin")
+
+    # 文本文件名
+    txt_filename = os.path.join(save_dir, f"{base_filename}.txt")
+
+    # 保存二进制文件
+    with open(bin_filename, 'wb') as bin_file:
+        bin_file.write(tensor.numpy().tobytes())
+
+    # 保存可视化的文本文件
+    with open(txt_filename, 'w') as txt_file:
+        # 将 tensor 转换为 NumPy 数组并写入文本文件
+        np.savetxt(txt_file, tensor.numpy().reshape(-1), fmt='%10.5f')
+
+    print(f"Tensor binary file saved to {bin_filename}")
+    print(f"Tensor text file saved to {txt_filename}")
