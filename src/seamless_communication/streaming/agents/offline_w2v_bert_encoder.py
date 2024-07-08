@@ -177,7 +177,7 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
         # >>>>>> kaige add.
         import os
 
-        env_name = "SAVE_OFFLINEWAV2VECBERTENCODERAGENT"
+        env_name = "offlineWav2VecBertEncoderAgent_save_flag".upper()
         save_offlineWav2VecBertEncoderAgent = os.environ.get(env_name)
         if save_offlineWav2VecBertEncoderAgent == ["Flase", "True"][1]:
             msg = "[INFO]save offlineWav2VecBertEncoderAgent"
@@ -278,13 +278,16 @@ def save_weight_of_encode_speech(model):
         model.speech_encoder._modules['inner']._modules.keys()
             odict_keys(['layers', 'layer_norm'])
     """
+    import os
     # from seamless_communication.src.model_weight_save import save_model_state_dict, save_model_structure
-    from model_weight_save import save_model_state_dict, save_model_structure
+    from seamless_communication.src.tools.model_weight_save import save_model_state_dict, save_model_structure
 
     # 提示信息
     print(">" * 12, "save weight of encode_speech", ">" * 12)
     # 构建存储文件夹和存储名称
-    weight_save_folder = "./model_weight/Agent3_OfflineWav2VecBertEncoderAgent"
+
+    env_name = "offlineWav2VecBertEncoderAgent_weight_save_folder".upper()
+    weight_save_folder = str(os.environ.get(env_name))
     weight_save_name = "encode_speech_weight"
     # 存储权重
     save_model_state_dict(model.speech_encoder, weight_save_folder, weight_save_name)
@@ -323,7 +326,7 @@ def save_input_output_speech_encoder(model, seqs, padding_mask):
         type(seqs) : torch.Tensor
         type(padding_mask) : NoneType
     """
-    from model_weight_save import save_tensor
+    from seamless_communication.src.tools.model_weight_save import save_tensor
     seqs, padding_mask = model.speech_encoder_frontend(seqs, padding_mask)
 
     save_dir = "./model_weight/Agent3_OfflineWav2VecBertEncoderAgent_input_output"
