@@ -83,38 +83,40 @@ def save_model_state_dict(model, weight_save_folder: str, weight_save_name: str)
             # 存储列说明
             csv_writer.writerow(
                 [
-                    "列说明:",
+                    "Column declaration:",
                 ]
             )
             csv_writer.writerow(
                 [
-                    "Key - 模型权重的含义",
-                    "Data Type - 模型权重的数据类型",
-                    "Shape - 模型权重的形状",
-                    "Total_Bytes(B) - 模型权重的总字节数",
-                    "Total_Bytes(KB) - 模型权重的总字节数",
-                    "Total_Bytes(MB) - 模型权重的总字节数",
-                    "Acc_Bytes(B) - 模型到当前权重累计的总字节数",
-                    "Acc_Bytes(KB) - 模型到当前权重累计的总字节数",
-                    "Acc_Bytes(MB) - 模型到当前权重累计的总字节数",
+                    "Key - Implications of model weights",
+                    "Data Type - The data type of the model weight",
+                    "Shape - The shape of the model weight",
+                    "Total_Bytes(B) - The total number of bytes of the model weight",
+                    "Total_Bytes(KB) - The total number of bytes of the model weight",
+                    "Total_Bytes(MB) - The total number of bytes of the model weight",
+                    "Acc_Bytes(B) - The total number of bytes accumulated from the model to the current weight",
+                    "Acc_Bytes(KB) - The total number of bytes accumulated from the model to the current weight",
+                    "Acc_Bytes(MB) - The total number of bytes accumulated from the model to the current weight",
                 ]
             )
+    # 提示信息
+    print(f"Save model state dict to {binary_file_path}, and its info to {csv_file_path}.")
 
 
 def save_model_structure(model, model_save_folder, model_save_name="model"):
     import os
 
-    msg = "save model structure to '{model_save_path}'"
-    start_msg = ">" * 6 + msg + ">" * 6
-    end_msg = "<" * 6 + msg + "<" * 6
-    # 提示信息
-    print(start_msg)
     # 获取模型的字符串表示
     model_structure = str(model)
     # 构建模型文件名
     model_save_file_name = model_save_name + ".txt"
     # 构建存储路径
     model_save_path = os.path.join(model_save_folder, model_save_file_name)
+    msg = f"save model structure to '{model_save_path}'"
+    start_msg = ">" * 6 + msg + ">" * 6
+    end_msg = "<" * 6 + msg + "<" * 6
+    # 提示信息
+    print(start_msg)
     # 将模型结构写入文本文件
     with open(model_save_path, "w") as file:
         file.write(model_structure)

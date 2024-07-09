@@ -2,6 +2,27 @@ from seamless_communication.streaming.agents.seamless_streaming_s2st import (
     SeamlessStreamingS2STJointVADAgent,
 )
 import os
+
+def insert_python_path():
+    import os
+    import sys
+
+    # 获取当前文件的绝对路径
+    current_path = os.path.abspath(__file__)
+    # 获取上级目录（父目录）
+    parent_path = os.path.dirname(current_path)
+    # 获取上上级目录（祖父目录）
+    grandparent_path = os.path.dirname(parent_path)
+
+    # 将上级目录和上上级目录添加到Python搜索路径中
+    # sys.path.insert0, parent_path)
+    sys.path.insert(0, grandparent_path)
+
+    # 打印sys.path以确认添加成功
+    # print(sys.path)
+
+insert_python_path()
+
 import io
 import json
 import matplotlib as mpl
@@ -77,14 +98,27 @@ print(lyngor_build_flag)
 ### save weight flag by os env.
 save_weight_flag = ModelSaveWeightFlags()
 # set os env
+### Agent 3 - offlineWav2VecBertEncoderAgent - 保存权重和输入的标识
 save_weight_flag.set_os_env(
     os_env_name="offlineWav2VecBertEncoderAgent_save_flag".upper(),
     value=["False", "True"][1],
 )
 save_weight_flag.set_os_env(
     os_env_name="offlineWav2VecBertEncoderAgent_weight_save_folder".upper(),
-    value="./datas/model_weight/Agent3_OfflineWav2VecBertEncoderAgent",
-    meaning="Agent3_OfflineWav2VecBertEncoderAgent weight save folder",
+    value="./datas/model/Agent3_OfflineWav2VecBertEncoderAgent_weight",
+    meaning="权重存储路径",
+)
+# Agent 3 - offlineWav2VecBertEncoderAgent - linear 是否量化标识
+save_weight_flag.set_os_env(
+    os_env_name="offlineWav2VecBertEncoderAgent_linear_quantize_flag".upper(),
+    value=["False", "True"][1],
+    meaning="权重量化标志",
+)
+# Agent 3 - offlineWav2VecBertEncoderAgent - linear 是否量化bit数标识
+save_weight_flag.set_os_env(
+    os_env_name="offlineWav2VecBertEncoderAgent_linear_quantize_bit".upper(),
+    value="4",
+    meaning="权重量化的比特数(该参数在使能权重量化时有效)",
 )
 print(save_weight_flag)
 
