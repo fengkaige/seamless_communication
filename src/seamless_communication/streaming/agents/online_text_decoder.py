@@ -22,6 +22,11 @@ from simuleval.agents.actions import Action, ReadAction, WriteAction
 from simuleval.data.segments import Segment, TextSegment
 from torch import Tensor
 
+import copy
+import gc
+
+from config.config import ControlSwitch
+control_switch = ControlSwitch()
 
 class DecoderAgentStates(AgentStates):  # type: ignore
     def reset(self) -> None:
@@ -231,6 +236,39 @@ class MMATextDecoderAgent(OnlineTextDecoderAgent):  # type: ignore
         """
         # print("type(self.model.decode)", type(self.model.decode))
         # print("self.model.decode:", self.model.decode)
+        if control_switch.unitYMMATextDecoderAgent["save_flag"]:
+
+            copied_model = copy.deepcopy(self.model)
+            copied_target_input = copy.deepcopy(target_input)
+            copied_encoder_output = copy.deepcopy(encoder_output)
+
+            msg = "[INFO]save unitYMMATextDecoderAgent"
+            print(msg)
+
+            save_input_output_text_decoder(
+                copied_model,
+                copied_target_input,
+                None,
+                copied_encoder_output,
+                None,
+                state_bag=self.state_bag
+            )
+
+            weight_save_folder = control_switch.unitYMMATextDecoderAgent['weight_save_folder']
+            linear_quantize_flag = control_switch.unitYMMATextDecoderAgent['quantize_flag']
+            linear_quantize_bit = control_switch.unitYMMATextDecoderAgent['linear_quantize_bit']
+            # 构建存储文件夹和存储名称
+            weight_save_name = "decode_text_weight"
+
+            save_weight_of_decode_text(copied_model.cpu(), weight_save_folder, weight_save_name, linear_quantize_flag, linear_quantize_bit)
+            
+            # del copied_model
+            # del copied_target_input
+            # del copied_encoder_output
+            # gc.collect()       # 执行垃圾回收，以确保及时释放内存
+
+            control_switch.unitYMMATextDecoderAgent["save_flag"] = False
+
 
         decoder_output, _, p_choose = self.model.decode(
             target_input, None, encoder_output, None, state_bag=self.state_bag
@@ -456,3 +494,64 @@ class UnitYMMATextDecoderAgent(MMASpeechToTextDecoderAgent):
             finished=finished,
             tgt_lang=states.tgt_lang,
         )
+
+
+def save_weight_of_decode_text(model, weight_save_folder, weight_save_name, linear_quantize_flag, linear_quantize_bit):
+    import os
+    # from seamless_communication.src.tools.model_weight_save import save_model_state_dict, save_model_structure
+    # from seamless_communication.src.tools.quantization import quantize_Agnent3_OfflineWav2VecBertEncoderAgent
+    from src.tools.weight_save.model_weight_save import save_model_state_dict, save_model_structure
+    from src.tools.quantization.quantization import quantize
+
+    # 提示信息
+    print(">" * 12, "save weight of encode_speech", ">" * 12)
+    # 量化权重
+    if linear_quantize_flag == "True":
+        model.speech_encoder = quantize(model.speech_encoder, weight_bit_width=linear_quantize_bit)
+
+    if linear_quantize_flag == "True":
+        if linear_quantize_bit == 4:
+            weight_save_name += "_int4"
+        elif linear_quantize_bit == 8:
+            weight_save_name += "_int8"
+        else:
+            # origin
+            weight_save_name += "_fp16"
+    else:
+        # origin
+        weight_save_name += "_fp16"
+    # 存储权重
+    save_model_state_dict(model.text_decoder, weight_save_folder, weight_save_name)
+    # 存储模型结构
+    struct_save_name = "decode_text_structure"
+    save_model_structure(model.text_decoder, weight_save_folder, struct_save_name)
+    # 提示信息
+    print("<" * 12, "save weight of decode_text", "<" * 12)
+
+
+
+def save_input_output_text_decoder(model, seqs, padding_mask, encoder_output, encoder_padding_mask, state_bag):
+    """
+        调试内容
+        type(seqs) : torch.Tensor
+        type(padding_mask) : NoneType
+    """
+    from src.tools.weight_save.model_weight_save import save_tensor
+    # from seamless_communication.src.tools.model_weight_save import save_tensor
+    seqs, padding_mask = model.text_decoder_frontend(
+        seqs, padding_mask, state_bag=state_bag
+    )
+
+    save_dir = "./model_weight/Agent3_unitYMMATextDecoderAgent_input_output"
+    save_tensor(seqs.cpu(), tensor_name="input_seqs", save_dir=save_dir)
+    ######
+    decoder_output, _, p_choose = model.text_decoder(  # type: ignore[no-any-return]
+            seqs,
+            padding_mask,
+            encoder_output,
+            encoder_padding_mask,
+            state_bag=state_bag,
+    )
+    ######
+    save_tensor(decoder_output.cpu(), tensor_name="ecoder_output", save_dir=save_dir)
+   

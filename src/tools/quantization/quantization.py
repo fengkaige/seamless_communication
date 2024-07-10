@@ -327,7 +327,7 @@ def compress_int4_weight(weight: torch.Tensor):  # (n, m)
 
         gridDim = (n, 1, 1)
         blockDim = (min(round_up(m, 32), 1024), 1, 1)
-
+        import pdb;pdb.set_trace()
         kernels.int4WeightCompression(
             gridDim,
             blockDim,
@@ -1061,7 +1061,7 @@ def quantize_all_linear_layer(model, weight_bit_width, empty_init, device):
     return model
 
 
-def quantize_Agnent3_OfflineWav2VecBertEncoderAgent(
+def quantize(
     model,
     weight_bit_width,
     empty_init=False,
@@ -1071,11 +1071,12 @@ def quantize_Agnent3_OfflineWav2VecBertEncoderAgent(
 ):
     """Replace fp16 linear with quantized linear"""
 
-    msg = "-" * 6 + "quantization Agent3 OfflineWav2VecBertEncoderAgent" + "-" * 6
-    print(msg)
+    # msg = "-" * 6 + "quantization Agent3 OfflineWav2VecBertEncoderAgent" + "-" * 6
+    # print(msg)
     analysis_linear_layer(model)
     # Quantize the linear layers
     model = quantize_all_linear_layer(model, weight_bit_width, empty_init, device)
     # print(model)
     return model
+
 

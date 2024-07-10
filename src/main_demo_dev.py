@@ -58,7 +58,7 @@ from simuleval.data.segments import Segment, TextSegment
 from simuleval.agents.pipeline import TreeAgentPipeline
 from simuleval.agents.states import AgentStates
 
-from config import LyngorBuildFlags, ModelSaveWeightFlags
+from config.config import LyngorBuildFlags, ModelSaveWeightFlags
 
 # sample_rate : 是什么含义？
 SAMPLE_RATE = 16000
@@ -80,47 +80,23 @@ print("building system from dir")
 ###### >>>>>> >>>>>> >>>>>>
 
 ### Set build flag by os env.
-lyngor_build_flag = LyngorBuildFlags()
-# add os env
-lyngor_build_flag.set_os_env(
-    os_env_name="build_offlineWav2VecBertEncoderAgent".upper(),
-    value=["False", "True"][0],
-)
-lyngor_build_flag.set_os_env(
-    os_env_name="build_vocoderAgent".upper(),
-    value=["False", "True"][0],
-)
-# set build flag
-lyngor_build_flag.build_offlineWav2VecBertEncoderAgent = ["False", "True"][0]  # type: ignore
-lyngor_build_flag.build_vocoderAgent = ["False", "True"][0]  # type: ignore
-print(lyngor_build_flag)
 
-### save weight flag by os env.
-save_weight_flag = ModelSaveWeightFlags()
-# set os env
-### Agent 3 - offlineWav2VecBertEncoderAgent - 保存权重和输入的标识
-save_weight_flag.set_os_env(
-    os_env_name="offlineWav2VecBertEncoderAgent_save_flag".upper(),
-    value=["False", "True"][1],
-)
-save_weight_flag.set_os_env(
-    os_env_name="offlineWav2VecBertEncoderAgent_weight_save_folder".upper(),
-    value="./datas/model/Agent3_OfflineWav2VecBertEncoderAgent_weight",
-    meaning="权重存储路径",
-)
-# Agent 3 - offlineWav2VecBertEncoderAgent - linear 是否量化标识
-save_weight_flag.set_os_env(
-    os_env_name="offlineWav2VecBertEncoderAgent_linear_quantize_flag".upper(),
-    value=["False", "True"][1],
-    meaning="权重量化标志",
-)
-# Agent 3 - offlineWav2VecBertEncoderAgent - linear 是否量化bit数标识
-save_weight_flag.set_os_env(
-    os_env_name="offlineWav2VecBertEncoderAgent_linear_quantize_bit".upper(),
-    value="4",
-    meaning="权重量化的比特数(该参数在使能权重量化时有效)",
-)
-print(save_weight_flag)
+from config.config import ControlSwitch
+control_switch = ControlSwitch()
+
+control_switch.offlineWav2VecBertEncoderAgent = {
+    'save_flag': True,
+    'weight_save_folder': "./datas/model/Agent3_OfflineWav2VecBertEncoderAgent_weight",
+    'quantize_flag': True,
+    'linear_quantize_bit': 4
+}
+
+control_switch.unitYMMATextDecoderAgent = {
+    'save_flag': False,
+    'weight_save_folder': "./datas/model/Agent3_unitYMMATextDecoderAgent_weight",
+    'quantize_flag': True,
+    'linear_quantize_bit': 4
+}
 
 ###### <<<<<< <<<<<< <<<<<<
 
@@ -152,7 +128,7 @@ print("finished building system")
 
 source_segment_size = 320  # milliseconds
 audio_frontend = AudioFrontEnd(
-    wav_file="./datas/input/reading.wav",
+    wav_file="./input/reading.wav",
     segment_size=source_segment_size,
 )
 
@@ -182,7 +158,7 @@ for i in range(len(wave)):
     print("length", len(wave[i]))
     print("duration", len(wave[i]) / target_sample_rate)
     plt.plot(wave[i])
-    plt.savefig("./datas/output/wave" + str(i) + ".png", dpi=300)
+    plt.savefig("./output/wave" + str(i) + ".png", dpi=300)
 
 wave_total = []
 for i in range(len(wave)):
@@ -190,7 +166,7 @@ for i in range(len(wave)):
 print(len(wave_total))
 # save as wav
 soundfile.write(
-    "./datas/output/reading.wav",
+    "./output/reading.wav",
     wave_total,
     target_sample_rate,
     format="WAV",
