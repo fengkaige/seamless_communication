@@ -327,7 +327,7 @@ def compress_int4_weight(weight: torch.Tensor):  # (n, m)
 
         gridDim = (n, 1, 1)
         blockDim = (min(round_up(m, 32), 1024), 1, 1)
-        import pdb;pdb.set_trace()
+
         kernels.int4WeightCompression(
             gridDim,
             blockDim,
