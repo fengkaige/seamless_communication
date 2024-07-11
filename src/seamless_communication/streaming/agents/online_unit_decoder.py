@@ -19,6 +19,10 @@ from simuleval.agents import GenericAgent
 from simuleval.agents.actions import Action, ReadAction, WriteAction
 from simuleval.data.segments import Segment, TextSegment
 
+import copy
+
+from config.config import ControlSwitch
+control_switch = ControlSwitch()
 
 class NARUnitDecoderAgentStates(AgentStates):  # type: ignore
     def reset(self) -> None:
@@ -105,6 +109,41 @@ class NARUnitYUnitDecoderAgent(GenericAgent):  # type: ignore
         print("[Debug] class NARUnitYUnitDecoderAgent :: func policy")
         # import pdb; pdb.set_trace()
 
+        if control_switch.nARUnitYUnitDecoderAgent["save_flag"]:
+            """
+                功能: 存储模型的权重和输入、输出
+            """
+            msg = "[INFO]save nARUnitYUnitDecoderAgent"
+            print(msg)
+            
+            copied_model = copy.deepcopy(self.model)
+            copied_text_seqs = copy.deepcopy(states.source_indices)
+            copied_text_decoder_output = copy.deepcopy(states.source)
+
+            save_input_output_unit_decoder(
+                model=copied_model,
+                text_seqs=copied_text_seqs,
+                text_decoder_output=copied_text_decoder_output,
+                text_decoder_padding_mask=None,
+                duration_factor=self.d_factor,
+                film_cond_emb = None
+            )
+
+            # 获取环境变量 - 对应变量在执行脚本中设置
+            weight_save_folder = control_switch.nARUnitYUnitDecoderAgent['weight_save_folder']
+            linear_quantize_flag = control_switch.nARUnitYUnitDecoderAgent['quantize_flag']
+            linear_quantize_bit = control_switch.nARUnitYUnitDecoderAgent['linear_quantize_bit']
+            
+            # 构建存储文件夹和存储名称
+            weight_save_name = "decode_unit_weight"
+            save_weight_of_decode_unit(copied_model.cpu(), weight_save_folder, weight_save_name, linear_quantize_flag, linear_quantize_bit)
+            
+            # del copied_seqs
+            # del copied_model
+            # gc.collect()     # 执行垃圾回收，以确保及时释放内存
+
+            control_switch.nARUnitYUnitDecoderAgent["save_flag"] = False
+        
         model_output, _, durations = self.model(
             text_decoder_output=states.source,
             text_decoder_padding_mask=None,
@@ -157,3 +196,64 @@ class NARUnitYUnitDecoderAgent(GenericAgent):  # type: ignore
             unity_model.t2u_model, UnitYNART2UModel
         )
         return cls(model=unity_model.t2u_model, tokenizer=unit_tokenizer, args=args)
+
+
+def save_weight_of_decode_unit(model, weight_save_folder, weight_save_name, linear_quantize_flag, linear_quantize_bit):
+    import os
+    # from seamless_communication.src.tools.model_weight_save import save_model_state_dict, save_model_structure
+    # from seamless_communication.src.tools.quantization import quantize_Agnent3_OfflineWav2VecBertEncoderAgent
+    from src.tools.weight_save.model_weight_save import save_model_state_dict, save_model_structure
+    from src.tools.quantization.quantization import quantize
+
+    # 提示信息
+    print(">" * 12, "save weight of decode_unit", ">" * 12)
+    # 量化权重
+    if linear_quantize_flag == "True":
+        model.speech_encoder = quantize(model.speech_encoder, weight_bit_width=linear_quantize_bit)
+
+    if linear_quantize_flag == "True":
+        if linear_quantize_bit == 4:
+            weight_save_name += "_int4"
+        elif linear_quantize_bit == 8:
+            weight_save_name += "_int8"
+        else:
+            # origin
+            weight_save_name += "_fp16"
+    else:
+        # origin
+        weight_save_name += "_fp16"
+    # 存储权重
+    save_model_state_dict(model, weight_save_folder, weight_save_name)
+    # 存储模型结构
+    struct_save_name = "decode_unit_structure"
+    save_model_structure(model, weight_save_folder, struct_save_name)
+    # 提示信息
+    print("<" * 12, "save weight of decode_unit", "<" * 12)
+
+
+def save_input_output_unit_decoder(model, text_seqs, text_decoder_output, text_decoder_padding_mask, duration_factor, film_cond_emb):
+    from src.tools.weight_save.model_weight_save import save_tensor
+    # from seamless_communication.src.tools.model_weight_save import save_tensor
+
+    save_dir = "./model_weight/Agent3_nARUnitYUnitDecoderAgent_input_output"
+    save_tensor(text_decoder_output.cpu(), tensor_name="text_decoder_output", save_dir=save_dir)
+
+    encoder_output, encoder_padding_mask = model.encode(
+        text_decoder_output, text_decoder_padding_mask
+    )
+    
+    if model.prosody_proj is not None and film_cond_emb is not None:
+            import pdb;pdb.set_trace()
+            encoder_output = encoder_output + model.prosody_proj(film_cond_emb)
+
+    decoder_output, decoder_padding_mask, durations = model.decode(
+        encoder_output,
+        encoder_padding_mask,
+        text_seqs,
+        duration_factor,
+        film_cond_emb,
+    )
+
+    logits = model.final_proj(decoder_output)
+
+    save_tensor(logits.cpu(), tensor_name="logits", save_dir=save_dir)

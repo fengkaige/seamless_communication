@@ -999,12 +999,14 @@ def find_linear_layers(module, prefix=""):
     import fairseq2
 
     fLinear = fairseq2.nn.projection.Linear
+    ftLinear = fairseq2.nn.TiedProjection.Linear
+    
     linear_layers = []
     # 来遍历模型并找到所有的Linear层
     for name, layer in module.named_children():
         # 完整名称
         full_name = prefix + name
-        if isinstance(layer, torch.nn.Linear) or isinstance(layer, fLinear):
+        if isinstance(layer, (torch.nn.Linear, fLinear, ftLinear)):
             linear_layers.append((full_name, layer))
         else:
             # 递归地检查子模块
@@ -1032,14 +1034,13 @@ def quantize_all_linear_layer(model, weight_bit_width, empty_init, device):
         import fairseq2
 
         fLinear = fairseq2.nn.projection.Linear
+        ftLinear = fairseq2.nn.TiedProjection.Linear
 
         # 来遍历模型并找到所有的Linear层
         for name, linear_layer in module.named_children():
             # 完整名称
             full_name = prefix + name
-            if isinstance(linear_layer, torch.nn.Linear) or isinstance(
-                linear_layer, fLinear
-            ):
+            if isinstance(linear_layer, (torch.nn.Linear, fLinear, ftLinear)):
                 print(f"Quantizing({quant_count}) layer {full_name}")
                 quant_count += 1
 

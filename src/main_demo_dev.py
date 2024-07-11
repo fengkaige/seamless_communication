@@ -98,6 +98,13 @@ control_switch.unitYMMATextDecoderAgent = {
     'linear_quantize_bit': 4
 }
 
+control_switch.nARUnitYUnitDecoderAgent = {
+    'save_flag': False,
+    'weight_save_folder': "./datas/model/Agent3_nARUnitYUnitDecoderAgent_weight",
+    'quantize_flag': True,
+    'linear_quantize_bit': 4
+}
+
 ###### <<<<<< <<<<<< <<<<<<
 
 agent_class = SeamlessStreamingS2STJointVADAgent
