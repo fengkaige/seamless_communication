@@ -84,19 +84,20 @@ print("building system from dir")
 from config.config import ControlSwitch
 control_switch = ControlSwitch()
 
-control_switch.offlineWav2VecBertEncoderAgent = {
+control_switch.offlineWav2VecBertEncoderAgent.update({
     'save_flag': True,
     'weight_save_folder': "./datas/model/Agent3_OfflineWav2VecBertEncoderAgent_weight",
     'quantize_flag': True,
-    'linear_quantize_bit': 4
-}
+    'linear_quantize_bit': 4,
+    "build_flag": False,
+})
 
-control_switch.unitYMMATextDecoderAgent = {
+control_switch.unitYMMATextDecoderAgent.update({
     'save_flag': False,
     'weight_save_folder': "./datas/model/Agent3_unitYMMATextDecoderAgent_weight",
     'quantize_flag': True,
     'linear_quantize_bit': 4
-}
+})
 
 ###### <<<<<< <<<<<< <<<<<<
 
@@ -128,7 +129,7 @@ print("finished building system")
 
 source_segment_size = 320  # milliseconds
 audio_frontend = AudioFrontEnd(
-    wav_file="./input/reading.wav",
+    wav_file="./datas/input/reading.wav",
     segment_size=source_segment_size,
 )
 
@@ -158,7 +159,7 @@ for i in range(len(wave)):
     print("length", len(wave[i]))
     print("duration", len(wave[i]) / target_sample_rate)
     plt.plot(wave[i])
-    plt.savefig("./output/wave" + str(i) + ".png", dpi=300)
+    plt.savefig("./datas/output/wave" + str(i) + ".png", dpi=300)
 
 wave_total = []
 for i in range(len(wave)):
@@ -166,7 +167,7 @@ for i in range(len(wave)):
 print(len(wave_total))
 # save as wav
 soundfile.write(
-    "./output/reading.wav",
+    "./datas/output/reading.wav",
     wave_total,
     target_sample_rate,
     format="WAV",

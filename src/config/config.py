@@ -126,9 +126,10 @@ class ControlSwitch:
 
     offlineWav2VecBertEncoderAgent = {
         'save_flag': False,
+        "build_flag": False,
         'weight_save_folder': "./datas/model/Agent3_OfflineWav2VecBertEncoderAgent_weight",
         'quantize_flag': True,
-        'linear_quantize_bit': 4
+        'linear_quantize_bit': 4,
     }
 
     unitYMMATextDecoderAgent = {
@@ -158,4 +159,4 @@ class ControlSwitch:
     #     if not ControlSwitch._instance:
     #         ControlSwitch._instance = ControlSwitch()
         # return ControlSwitch._instance
-    
+

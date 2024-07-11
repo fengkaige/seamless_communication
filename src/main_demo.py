@@ -34,8 +34,6 @@ from simuleval.data.segments import Segment, TextSegment
 from simuleval.agents.pipeline import TreeAgentPipeline
 from simuleval.agents.states import AgentStates
 
-from config import LyngorBuildFlags, ModelSaveWeightFlags
-
 # sample_rate : 是什么含义？
 SAMPLE_RATE = 16000
 
@@ -289,22 +287,6 @@ def get_s2st_delayed_targets(delays, target_sample_rate, prediction_lists, speec
     return target_samples, intervals
 
 if __name__ == "__main__":
-
-
-    print("building system from dir")
-
-    # Set build flag by os env.
-    lyngor_build_flag = LyngorBuildFlags()
-    lyngor_build_flag.build_offlineWav2VecBertEncoderAgent = "False"
-    lyngor_build_flag.build_vocoderAgent = "False"
-    lyngor_build_flag.init_os_env()
-
-    # save weight flag by os env.
-    save_weight_flag = ModelSaveWeightFlags()
-    save_weight_flag.save_offlineWav2VecBertEncoderAgent = "True"
-    save_weight_flag.save_vocoderAgent = "False"
-    save_weight_flag.init_os_env()
-
 
     agent_class = SeamlessStreamingS2STJointVADAgent
     tgt_lang = "spa"
