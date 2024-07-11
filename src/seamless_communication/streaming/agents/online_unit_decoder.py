@@ -203,15 +203,25 @@ def save_weight_of_decode_unit(model, weight_save_folder, weight_save_name, line
     # from seamless_communication.src.tools.model_weight_save import save_model_state_dict, save_model_structure
     # from seamless_communication.src.tools.quantization import quantize_Agnent3_OfflineWav2VecBertEncoderAgent
     from src.tools.weight_save.model_weight_save import save_model_state_dict, save_model_structure
-    from src.tools.quantization.quantization import quantize
+    from src.tools.quantization.quantization import quantize, QuantizedLinear
 
     # 提示信息
     print(">" * 12, "save weight of decode_unit", ">" * 12)
     # 量化权重
-    if linear_quantize_flag == "True":
-        model.speech_encoder = quantize(model.speech_encoder, weight_bit_width=linear_quantize_bit)
+    if linear_quantize_flag == True:
+        # model = quantize(model, weight_bit_width=linear_quantize_bit)
+        model.encoder = quantize(model.encoder, weight_bit_width=linear_quantize_bit)
+        model.decoder_frontend = quantize(model.decoder_frontend, weight_bit_width=linear_quantize_bit)
+        model.decoder = quantize(model.decoder, weight_bit_width=linear_quantize_bit)
+        model.final_proj = QuantizedLinear(
+            weight_bit_width=linear_quantize_bit,
+            weight=model.final_proj.weight,
+            bias=model.final_proj.bias,
+            dtype=model.final_proj.weight.dtype,
+            device=model.final_proj.weight.device
+        ) 
 
-    if linear_quantize_flag == "True":
+    if linear_quantize_flag == True:
         if linear_quantize_bit == 4:
             weight_save_name += "_int4"
         elif linear_quantize_bit == 8:

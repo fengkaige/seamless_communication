@@ -506,10 +506,10 @@ def save_weight_of_decode_text(model, weight_save_folder, weight_save_name, line
     # 提示信息
     print(">" * 12, "save weight of encode_speech", ">" * 12)
     # 量化权重
-    if linear_quantize_flag == "True":
-        model.speech_encoder = quantize(model.speech_encoder, weight_bit_width=linear_quantize_bit)
+    if linear_quantize_flag == True:
+        model.text_decoder = quantize(model.text_decoder, weight_bit_width=linear_quantize_bit)
 
-    if linear_quantize_flag == "True":
+    if linear_quantize_flag == True:
         if linear_quantize_bit == 4:
             weight_save_name += "_int4"
         elif linear_quantize_bit == 8:

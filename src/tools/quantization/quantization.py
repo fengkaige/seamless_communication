@@ -999,7 +999,7 @@ def find_linear_layers(module, prefix=""):
     import fairseq2
 
     fLinear = fairseq2.nn.projection.Linear
-    ftLinear = fairseq2.nn.TiedProjection.Linear
+    ftLinear = fairseq2.nn.TiedProjection
     
     linear_layers = []
     # 来遍历模型并找到所有的Linear层
@@ -1034,7 +1034,7 @@ def quantize_all_linear_layer(model, weight_bit_width, empty_init, device):
         import fairseq2
 
         fLinear = fairseq2.nn.projection.Linear
-        ftLinear = fairseq2.nn.TiedProjection.Linear
+        ftLinear = fairseq2.nn.TiedProjection
 
         # 来遍历模型并找到所有的Linear层
         for name, linear_layer in module.named_children():
