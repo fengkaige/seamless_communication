@@ -63,16 +63,103 @@ class MyUnitYModel_2Input(torch.nn.Module):
         return self.unity_model.encode_speech(seqs, pad_mask)
 
 
+class MyConformerBlockModel_1Input(torch.nn.Module):
+    """Tmp Model 2. to fit torch.jit.trace interface.
+    2 input model
+    """
+
+    def __init__(self, myConformerBlock):
+        super().__init__()
+        self.myConformerBlock = myConformerBlock.to(torch.device("cpu"))
+
+    def forward(self, seqs):
+        output, *others = self.myConformerBlock(seqs, None)
+        # print(len(output))
+        # print([type(o) for o in output])
+        # import pdb; pdb.set_trace()
+        return output
+
+
+def lyngor_build_conformer_block(myConformerBlock, model_input_size):
+    ####### *3. DLmodel load
+    import lyngor as lyn
+
+    lyn.debug()
+    data_type = "float32"  # TODO
+    lyn_model = lyn.DLModel()
+    model_type = "Pytorch"
+    dict_inshape = {}
+    dict_inshape.update({"data": model_input_size})
+    lyn_model.load(myConformerBlock, model_type, inputs_dict=dict_inshape)
+
+    # *3. DLmodel build
+    target = "apu"
+    # lyn_module = lyn.Builder(target=target, is_map=True, cpu_arch='x86', cc="g++")
+    lyn_module = lyn.Builder(target=target)
+
+    out_path = "./encode_speech_model"
+    opt_level = 3
+    lyn_module.build(
+        lyn_model.mod, lyn_model.params, opt_level, out_path=out_path, build_mode="auto"
+    )
+
+def build_conformer_block(encode_speech_model, model_input_size):
+    import torch
+
+    print("[Debug] Build Model - class OfflineWav2VecBertEncoderAgent")
+
+    ####### *1. Use MyUnitYModel to fit torch.jit.trace interface.
+
+    from fairseq2.models.conformer.block import ConformerBlock as ConformerBlock
+    """
+        输入形状:
+        ConformerBlock forward torch.Size([1, 111, 1024])
+        ConformerBlock forward torch.Size([1, 127, 1024])
+        ConformerBlock forward torch.Size([1, 143, 1024])
+        ConformerBlock forward torch.Size([1, 159, 1024])
+        ConformerBlock forward torch.Size([1, 175, 1024])
+        ......
+    """
+    model_name = "000_conformerblock__padding_mask_None__torch_model"
+
+    model_input_size = [1, 111, 1024]
+    myConformerBlock = MyConformerBlockModel_1Input(
+        encode_speech_model.encode_speech.unity_model.speech_encoder.inner.layers[0]
+    )
+    myScriptModel = torch.jit.trace(myConformerBlock, torch.randn(*model_input_size))
+    # trace的结果存储到encode_speech_model.encode_speech.graph
+    # 保存到文件
+    torch.jit.save(myScriptModel, f"./{model_name}.pt")
+
+    ####### *2. myConformerBlock 导出为onnx格式的模型
+    import torch.onnx
+    input_names = ["input"]
+    output_names = ["output"]
+    torch.onnx.export(
+        myConformerBlock,
+        torch.randn(*model_input_size),
+        f"./{model_name}.onnx",
+        verbose=True,
+        input_names=input_names,
+        output_names=output_names,
+        opset_version=13,
+    )
+
+    ###### *3. 使用 Lyngor 编译 conformer block 模块
+    # 编译失败 - 注释掉
+    # lyngor_build_conformer_block(myConformerBlock, model_input_size)
+
+
 def build_encode_speech(encode_speech_model, model_input_size):
     """编译encode_speech模型
 
     Args:
         model (_type_): _description_
     """
-    print("[Debug] Build Model - class OfflineWav2VecBertEncoderAgent")
-    import pdb
+    import torch
 
-    pdb.set_trace()
+    print("[Debug] Build Model - class OfflineWav2VecBertEncoderAgent")
+
     # *1. Use MyUnitYModel to fit torch.jit.trace interface.
     mymodel = None
     if len(model_input_size) == 1:
@@ -80,7 +167,7 @@ def build_encode_speech(encode_speech_model, model_input_size):
             MyUnitYModel_1Input(
                 encode_speech_model,
             )
-            .to(torch.device("cpu"))
+            .to("cpu")
             .eval()
             .float()
         )
@@ -89,12 +176,54 @@ def build_encode_speech(encode_speech_model, model_input_size):
             MyUnitYModel_2Input(
                 encode_speech_model,
             )
-            .to(torch.device("cpu"))
+            .to("cpu")
             .eval()
             .float()
         )
     else:
         raise ValueError("model_input_size must be 1 or 2.")
+
+    import pdb
+
+    pdb.set_trace()
+
+    from fairseq2.models.conformer.block import ConformerBlock as ConformerBlock
+
+    # myConformerBlock = ConformerBlock()
+    # myConformerBlock = ConformerBlock()
+    """
+        ConformerBlock forward torch.Size([1, 111, 1024])
+        ConformerBlock forward torch.Size([1, 127, 1024])
+        ConformerBlock forward torch.Size([1, 143, 1024])
+        ConformerBlock forward torch.Size([1, 159, 1024])
+        ConformerBlock forward torch.Size([1, 175, 1024])
+        ......
+    """
+    model_name = "000_conformerblock__padding_mask_None__torch_model"
+
+    model_input_size = [1, 111, 1024]
+    myConformerBlock = MyConformerBlockModel_1Input(
+        mymodel.unity_model.speech_encoder.inner.layers[0]
+    )
+    myScriptModel = torch.jit.trace(myConformerBlock, torch.randn(*model_input_size))
+    # trace的结果存储到encode_speech_model.encode_speech.graph
+    # 保存到文件
+    torch.jit.save(myScriptModel, f"./{model_name}.pt")
+
+    # myConformerBlock 导出为onnx格式的模型
+    import torch.onnx
+
+    input_names = ["input"]
+    output_names = ["output"]
+    torch.onnx.export(
+        myConformerBlock,
+        torch.randn(*model_input_size),
+        f"./{model_name}.onnx",
+        verbose=True,
+        input_names=input_names,
+        output_names=output_names,
+        opset_version=13,
+    )
 
     # *2. DLmodel load
     import lyngor as lyn
@@ -104,8 +233,12 @@ def build_encode_speech(encode_speech_model, model_input_size):
     lyn_model = lyn.DLModel()
     model_type = "Pytorch"
     dict_inshape = {}
-    dict_inshape.update({"data": model_input_size[0]})
-    lyn_model.load(mymodel, model_type, inputs_dict=dict_inshape)
+    dict_inshape.update({"data": model_input_size})
+    lyn_model.load(myConformerBlock, model_type, inputs_dict=dict_inshape)
+
+    import pdb
+
+    pdb.set_trace()
 
     # *3. DLmodel build
     target = "apu"
@@ -184,11 +317,11 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
         import os
         if control_switch.offlineWav2VecBertEncoderAgent["save_flag"]:
             """
-                功能: 存储模型的权重和输入、输出
+            功能: 存储模型的权重和输入、输出
             """
             msg = "[INFO]save offlineWav2VecBertEncoderAgent"
             print(msg)
-            
+
             copied_seqs = copy.deepcopy(seqs)
             copied_model = copy.deepcopy(self.model)
 
@@ -202,11 +335,17 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
             weight_save_folder = control_switch.offlineWav2VecBertEncoderAgent['weight_save_folder']
             linear_quantize_flag = control_switch.offlineWav2VecBertEncoderAgent['quantize_flag']
             linear_quantize_bit = control_switch.offlineWav2VecBertEncoderAgent['linear_quantize_bit']
-            
+
             # 构建存储文件夹和存储名称
             weight_save_name = "encode_speech_weight"
-            save_weight_of_encode_speech(copied_model.cpu(), weight_save_folder, weight_save_name, linear_quantize_flag, linear_quantize_bit)
-            
+            save_weight_of_encode_speech(
+                self.model,
+                weight_save_folder,
+                weight_save_name,
+                linear_quantize_flag,
+                linear_quantize_bit,
+            )
+
             # del copied_seqs
             # del copied_model
             # gc.collect()     # 执行垃圾回收，以确保及时释放内存
@@ -215,19 +354,20 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
 
         import os
 
-        env_name = "BUILD_OFFLINEWAV2VECBERTENCODERAGENT"
-        build_offlineWav2VecBertEncoderAgent = os.environ.get(env_name)
-        if build_offlineWav2VecBertEncoderAgent == ["Flase", "True"][1]:
+        if control_switch.offlineWav2VecBertEncoderAgent["build_flag"]:
             print("[build_offlineWav2VecBertEncoderAgent]")
+
+            copied_seqs = copy.deepcopy(seqs)
+            copied_model = copy.deepcopy(self.model)
+
+            # 输出单个 conformer block 的模型结构，权重和
+            build_conformer_block(copied_model, [copied_seqs.shape])
 
             # build_encode_speech
             if padding_mask != None:
-                build_encode_speech(self.model, [seqs.shape, padding_mask.shape])
-                # build_encode_speech(self.model.speech_encoder_frontend, [seqs.shape, padding_mask.shape])
-                # build_encode_speech(self.model.speech_encoder, [seqs.shape, padding_mask.shape])
+                build_encode_speech(copied_model, [copied_seqs.shape, padding_mask.shape])
             else:
-                build_encode_speech(self.model, [seqs.shape])
-                # build_encode_speech(self.model.encode_speech, [seqs.shape])
+                build_encode_speech(copied_model, [copied_seqs.shape])
 
             """
             type(self.model) : <class 'seamless_communication.models.unity.model.UnitYModel'>
@@ -289,7 +429,13 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
         return cls(unity_model, unity_config.w2v2_encoder_config, text_tokenizer, args)
 
 
-def save_weight_of_encode_speech(model, weight_save_folder, weight_save_name, linear_quantize_flag, linear_quantize_bit):
+def save_weight_of_encode_speech(
+    model,
+    weight_save_folder,
+    weight_save_name,
+    linear_quantize_flag,
+    linear_quantize_bit,
+):
     """
     调试信息:
         type model : Class seamless_communication.models.unity.model.UnitYModel
@@ -301,10 +447,15 @@ def save_weight_of_encode_speech(model, weight_save_folder, weight_save_name, li
             odict_keys(['layers', 'layer_norm'])
     """
     import os
+
     # from seamless_communication.src.tools.model_weight_save import save_model_state_dict, save_model_structure
     # from seamless_communication.src.tools.quantization import quantize_Agnent3_OfflineWav2VecBertEncoderAgent
-    from src.tools.weight_save.model_weight_save import save_model_state_dict, save_model_structure
+    from src.tools.weight_save.model_weight_save import (
+        save_model_state_dict,
+        save_model_structure,
+    )
     from src.tools.quantization.quantization import quantize
+
 
     # 提示信息
     print(">" * 12, "save weight of encode_speech", ">" * 12)
@@ -357,12 +508,13 @@ def save_weight_of_encode_speech(model, weight_save_folder, weight_save_name, li
 
 def save_input_output_speech_encoder(model, seqs, padding_mask):
     """
-        调试内容
-        type(seqs) : torch.Tensor
-        type(padding_mask) : NoneType
+    调试内容
+    type(seqs) : torch.Tensor
+    type(padding_mask) : NoneType
     """
     # from seamless_communication.src.tools.model_weight_save import save_tensor
     from src.tools.weight_save.model_weight_save import save_tensor
+
     seqs, padding_mask = model.speech_encoder_frontend(seqs, padding_mask)
 
     save_dir = "./model_weight/Agent3_OfflineWav2VecBertEncoderAgent_input_output"
@@ -377,6 +529,4 @@ def save_input_output_speech_encoder(model, seqs, padding_mask):
     #     "> (c : 继续, q : 退出) < \n"
     # )
     # import pdb; pdb.set_trace()
-
-
-
+    # pdb.set_trace()
