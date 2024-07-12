@@ -209,17 +209,17 @@ def save_weight_of_decode_unit(model, weight_save_folder, weight_save_name, line
     print(">" * 12, "save weight of decode_unit", ">" * 12)
     # 量化权重
     if linear_quantize_flag == True:
-        # model = quantize(model, weight_bit_width=linear_quantize_bit)
-        model.encoder = quantize(model.encoder, weight_bit_width=linear_quantize_bit)
-        model.decoder_frontend = quantize(model.decoder_frontend, weight_bit_width=linear_quantize_bit)
-        model.decoder = quantize(model.decoder, weight_bit_width=linear_quantize_bit)
-        model.final_proj = QuantizedLinear(
-            weight_bit_width=linear_quantize_bit,
-            weight=model.final_proj.weight,
-            bias=model.final_proj.bias,
-            dtype=model.final_proj.weight.dtype,
-            device=model.final_proj.weight.device
-        ) 
+        model = quantize(model, weight_bit_width=linear_quantize_bit)
+        # model.encoder = quantize(model.encoder, weight_bit_width=linear_quantize_bit)
+        # model.decoder_frontend = quantize(model.decoder_frontend, weight_bit_width=linear_quantize_bit)
+        # model.decoder = quantize(model.decoder, weight_bit_width=linear_quantize_bit)
+        # model.final_proj = QuantizedLinear(
+        #     weight_bit_width=linear_quantize_bit,
+        #     weight=model.final_proj.weight,
+        #     bias=model.final_proj.bias,
+        #     dtype=model.final_proj.weight.dtype,
+        #     device=model.final_proj.weight.device
+        # ) 
 
     if linear_quantize_flag == True:
         if linear_quantize_bit == 4:
@@ -246,7 +246,7 @@ def save_input_output_unit_decoder(model, text_seqs, text_decoder_output, text_d
     # from seamless_communication.src.tools.model_weight_save import save_tensor
 
     save_dir = "./model_weight/Agent3_nARUnitYUnitDecoderAgent_input_output"
-    save_tensor(text_decoder_output.cpu(), tensor_name="text_decoder_output", save_dir=save_dir)
+    save_tensor(text_decoder_output.cpu(), tensor_name="unit_decoder_input", save_dir=save_dir)
 
     encoder_output, encoder_padding_mask = model.encode(
         text_decoder_output, text_decoder_padding_mask
@@ -266,4 +266,4 @@ def save_input_output_unit_decoder(model, text_seqs, text_decoder_output, text_d
 
     logits = model.final_proj(decoder_output)
 
-    save_tensor(logits.cpu(), tensor_name="logits", save_dir=save_dir)
+    save_tensor(logits.cpu(), tensor_name="unit_decoder_output", save_dir=save_dir)
