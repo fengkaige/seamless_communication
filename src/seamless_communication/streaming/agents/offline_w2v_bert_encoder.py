@@ -339,7 +339,7 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
             # 构建存储文件夹和存储名称
             weight_save_name = "encode_speech_weight"
             save_weight_of_encode_speech(
-                self.model,
+                copied_model.cpu(),
                 weight_save_folder,
                 weight_save_name,
                 linear_quantize_flag,
@@ -460,10 +460,10 @@ def save_weight_of_encode_speech(
     # 提示信息
     print(">" * 12, "save weight of encode_speech", ">" * 12)
     # 量化权重
-    if linear_quantize_flag == "True":
+    if linear_quantize_flag == True:
         model.speech_encoder = quantize(model.speech_encoder, weight_bit_width=linear_quantize_bit)
 
-    if linear_quantize_flag == "True":
+    if linear_quantize_flag == True:
         if linear_quantize_bit == 4:
             weight_save_name += "_int4"
         elif linear_quantize_bit == 8:
