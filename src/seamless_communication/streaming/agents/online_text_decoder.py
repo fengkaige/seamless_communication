@@ -542,7 +542,7 @@ def save_input_output_text_decoder(model, seqs, padding_mask, encoder_output, en
         seqs, padding_mask, state_bag=state_bag
     )
 
-    save_dir = "./model_weight/Agent3_unitYMMATextDecoderAgent_input_output"
+    save_dir = "./model_weight/Agent4_UnitYMMATextDecoderAgent_input_output"
     save_tensor(seqs.cpu(), tensor_name="text_decoder_input", save_dir=save_dir)
     ######
     decoder_output, _, p_choose = model.text_decoder(  # type: ignore[no-any-return]

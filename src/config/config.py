@@ -134,14 +134,14 @@ class ControlSwitch:
 
     unitYMMATextDecoderAgent = {
         'save_flag': False,
-        'weight_save_folder': "./datas/model/Agent3_unitYMMATextDecoderAgent_weight",
+        'weight_save_folder': "./datas/model/Agent4_UnitYMMATextDecoderAgent_weight",
         'quantize_flag': True,
         'linear_quantize_bit': 4
     }
 
     nARUnitYUnitDecoderAgent = {
         'save_flag': False,
-        'weight_save_folder': "./datas/model/Agent3_nARUnitYUnitDecoderAgent_weight",
+        'weight_save_folder': "./datas/model/Agent6_NARUnitYUnitDecoderAgent_weight",
         'quantize_flag': True,
         'linear_quantize_bit': 4
     }

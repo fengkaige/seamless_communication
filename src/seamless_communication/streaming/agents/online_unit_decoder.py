@@ -245,7 +245,7 @@ def save_input_output_unit_decoder(model, text_seqs, text_decoder_output, text_d
     from src.tools.weight_save.model_weight_save import save_tensor
     # from seamless_communication.src.tools.model_weight_save import save_tensor
 
-    save_dir = "./model_weight/Agent3_nARUnitYUnitDecoderAgent_input_output"
+    save_dir = "./model_weight/Agent6_NARUnitYUnitDecoderAgent_input_output"
     save_tensor(text_decoder_output.cpu(), tensor_name="unit_decoder_input", save_dir=save_dir)
 
     encoder_output, encoder_padding_mask = model.encode(
