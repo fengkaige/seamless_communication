@@ -209,17 +209,17 @@ def save_weight_of_decode_unit(model, weight_save_folder, weight_save_name, line
     print(">" * 12, "save weight of decode_unit", ">" * 12)
     # 量化权重
     if linear_quantize_flag == True:
-        model = quantize(model, weight_bit_width=linear_quantize_bit)
-        # model.encoder = quantize(model.encoder, weight_bit_width=linear_quantize_bit)
-        # model.decoder_frontend = quantize(model.decoder_frontend, weight_bit_width=linear_quantize_bit)
-        # model.decoder = quantize(model.decoder, weight_bit_width=linear_quantize_bit)
-        # model.final_proj = QuantizedLinear(
-        #     weight_bit_width=linear_quantize_bit,
-        #     weight=model.final_proj.weight,
-        #     bias=model.final_proj.bias,
-        #     dtype=model.final_proj.weight.dtype,
-        #     device=model.final_proj.weight.device
-        # ) 
+        # model = quantize(model, weight_bit_width=linear_quantize_bit)
+        model.encoder = quantize(model.encoder, weight_bit_width=linear_quantize_bit)
+        model.decoder_frontend = quantize(model.decoder_frontend, weight_bit_width=linear_quantize_bit)
+        model.decoder = quantize(model.decoder, weight_bit_width=linear_quantize_bit)
+        model.final_proj = QuantizedLinear(
+            weight_bit_width=linear_quantize_bit,
+            weight=model.final_proj.weight,
+            bias=model.final_proj.bias,
+            dtype=model.final_proj.weight.dtype,
+            device=model.final_proj.weight.device
+        ) 
 
     if linear_quantize_flag == True:
         if linear_quantize_bit == 4:
