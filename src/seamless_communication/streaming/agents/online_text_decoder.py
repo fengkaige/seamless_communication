@@ -530,28 +530,31 @@ def save_weight_of_decode_text(model, weight_save_folder, weight_save_name, line
 
 
 
-def save_input_output_text_decoder(model, seqs, padding_mask, encoder_output, encoder_padding_mask, state_bag):
+def save_input_output_text_decoder(model, target_input, padding_mask, decoder_input, encoder_padding_mask, state_bag):
     """
         调试内容
-        type(seqs) : torch.Tensor
+        type(target_input) : torch.Tensor
         type(padding_mask) : NoneType
     """
     from src.tools.weight_save.model_weight_save import save_tensor
+    import pdb;pdb.set_trace()
     # from seamless_communication.src.tools.model_weight_save import save_tensor
-    seqs, padding_mask = model.text_decoder_frontend(
-        seqs, padding_mask, state_bag=state_bag
+    target_input, padding_mask = model.text_decoder_frontend(
+        target_input, padding_mask, state_bag=state_bag
     )
 
     save_dir = "./model_weight/Agent4_UnitYMMATextDecoderAgent_input_output"
-    save_tensor(seqs.cpu(), tensor_name="text_decoder_input", save_dir=save_dir)
+    save_tensor(target_input.cpu(), tensor_name="target_input", save_dir=save_dir)
+    save_tensor(decoder_input.cpu(), tensor_name="decoder_input", save_dir=save_dir)
+
     ######
-    decoder_output, _, p_choose = model.text_decoder(  # type: ignore[no-any-return]
-            seqs,
+    decoder_output, padding_mask, p_choose = model.text_decoder(  # type: ignore[no-any-return]
+            target_input,
             padding_mask,
-            encoder_output,
+            decoder_input,
             encoder_padding_mask,
             state_bag=state_bag,
     )
     ######
-    save_tensor(decoder_output.cpu(), tensor_name="text_decoder_output", save_dir=save_dir)
-   
+    save_tensor(decoder_output.cpu(), tensor_name="decoder_output", save_dir=save_dir)
+    save_tensor(p_choose.cpu(), tensor_name="p_choose_output", save_dir=save_dir)
