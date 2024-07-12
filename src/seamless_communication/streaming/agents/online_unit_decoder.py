@@ -123,7 +123,7 @@ class NARUnitYUnitDecoderAgent(GenericAgent):  # type: ignore
             save_input_output_unit_decoder(
                 model=copied_model,
                 text_seqs=copied_text_seqs,
-                text_decoder_output=copied_text_decoder_output,
+                encoder_input=copied_text_decoder_output,
                 text_decoder_padding_mask=None,
                 duration_factor=self.d_factor,
                 film_cond_emb = None
@@ -241,15 +241,16 @@ def save_weight_of_decode_unit(model, weight_save_folder, weight_save_name, line
     print("<" * 12, "save weight of decode_unit", "<" * 12)
 
 
-def save_input_output_unit_decoder(model, text_seqs, text_decoder_output, text_decoder_padding_mask, duration_factor, film_cond_emb):
+def save_input_output_unit_decoder(model, text_seqs, encoder_input, text_decoder_padding_mask, duration_factor, film_cond_emb):
     from src.tools.weight_save.model_weight_save import save_tensor
     # from seamless_communication.src.tools.model_weight_save import save_tensor
 
-    save_dir = "./model_weight/Agent3_nARUnitYUnitDecoderAgent_input_output"
-    save_tensor(text_decoder_output.cpu(), tensor_name="text_decoder_output", save_dir=save_dir)
+    save_dir = "./model_weight/Agent6_NARUnitYUnitDecoderAgent_input_output"
+    save_tensor(encoder_input.cpu(), tensor_name="text_seqs_input", save_dir=save_dir)
+    save_tensor(encoder_input.cpu(), tensor_name="encoder_input", save_dir=save_dir)
 
     encoder_output, encoder_padding_mask = model.encode(
-        text_decoder_output, text_decoder_padding_mask
+        encoder_input, text_decoder_padding_mask
     )
     
     if model.prosody_proj is not None and film_cond_emb is not None:
@@ -265,5 +266,6 @@ def save_input_output_unit_decoder(model, text_seqs, text_decoder_output, text_d
     )
 
     logits = model.final_proj(decoder_output)
-
-    save_tensor(logits.cpu(), tensor_name="logits", save_dir=save_dir)
+    
+    save_tensor(logits.cpu(), tensor_name="logits_output", save_dir=save_dir)
+    save_tensor(durations.cpu(), tensor_name="durations_output", save_dir=save_dir)

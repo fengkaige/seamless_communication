@@ -85,7 +85,7 @@ from config.config import ControlSwitch
 control_switch = ControlSwitch()
 
 control_switch.offlineWav2VecBertEncoderAgent.update({
-    'save_flag': True,
+    'save_flag': False,
     'weight_save_folder': "./datas/model/Agent3_OfflineWav2VecBertEncoderAgent_weight",
     'quantize_flag': True,
     'linear_quantize_bit': 4,
@@ -94,15 +94,15 @@ control_switch.offlineWav2VecBertEncoderAgent.update({
 
 control_switch.unitYMMATextDecoderAgent.update({
     'save_flag': False,
-    'weight_save_folder': "./datas/model/Agent3_unitYMMATextDecoderAgent_weight",
+    'weight_save_folder': "./datas/model/Agent4_UnitYMMATextDecoderAgent_weight",
     'quantize_flag': True,
     'linear_quantize_bit': 4
 })
 
 control_switch.nARUnitYUnitDecoderAgent = {
-    'save_flag': False,
-    'weight_save_folder': "./datas/model/Agent3_nARUnitYUnitDecoderAgent_weight",
-    'quantize_flag': True,
+    'save_flag': True,
+    'weight_save_folder': "./datas/model/Agent6_nARUnitYUnitDecoderAgent_weight",
+    'quantize_flag': False,
     'linear_quantize_bit': 4
 }
 
