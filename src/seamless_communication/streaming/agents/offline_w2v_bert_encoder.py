@@ -80,7 +80,7 @@ class MyConformerBlockModel_1Input(torch.nn.Module):
         return output
 
 
-def lyngor_build_conformer_block(myConformerBlock, model_input_size):
+def lyngor_build_conformer_block(myConformerBlock, model_input_size, out_path = "./encode_speech_model", save_graph = False):
     ####### *3. DLmodel load
     import lyngor as lyn
 
@@ -97,16 +97,148 @@ def lyngor_build_conformer_block(myConformerBlock, model_input_size):
     # lyn_module = lyn.Builder(target=target, is_map=True, cpu_arch='x86', cc="g++")
     lyn_module = lyn.Builder(target=target)
 
-    out_path = "./encode_speech_model"
     opt_level = 3
+    if save_graph:
+        lyn.show_relay_graph  = True
     lyn_module.build(
-        lyn_model.mod, lyn_model.params, opt_level, out_path=out_path, build_mode="auto"
+        lyn_model.mod, lyn_model.params, opt_level, out_path=out_path, build_mode="auto", save_graph = save_graph
     )
 
 def build_conformer_block(encode_speech_model, model_input_size):
     import torch
 
     print("[Debug] Build Model - class OfflineWav2VecBertEncoderAgent")
+    assert isinstance(encode_speech_model, UnitYModel), "Need encode_speech_model type is UnitYModel"
+
+    ####### *1. Use MyUnitYModel to fit torch.jit.trace interface.
+
+    from fairseq2.models.conformer.block import ConformerBlock as ConformerBlock
+    """
+        输入形状:
+        ConformerBlock forward torch.Size([1, 111, 1024])
+        ConformerBlock forward torch.Size([1, 127, 1024])
+        ConformerBlock forward torch.Size([1, 143, 1024])
+        ConformerBlock forward torch.Size([1, 159, 1024])
+        ConformerBlock forward torch.Size([1, 175, 1024])
+        ......
+    """
+    model_name = "000_conformerblock__padding_mask_None__torch_model"
+
+    model_input_size = [1, 111, 1024]
+    myConformerBlock = MyConformerBlockModel_1Input(
+        encode_speech_model.speech_encoder.inner.layers[0]
+    )
+    myScriptModel = torch.jit.trace(myConformerBlock, torch.randn(*model_input_size))
+    # trace的结果存储到encode_speech_model.encode_speech.graph
+    # 保存到文件
+    torch.jit.save(myScriptModel, f"./{model_name}.pt")
+
+    ####### *2. myConformerBlock 导出为onnx格式的模型
+    import torch.onnx
+    input_names = ["input"]
+    output_names = ["output"]
+    torch.onnx.export(
+        myConformerBlock,
+        torch.randn(*model_input_size),
+        f"./{model_name}.onnx",
+        verbose=True,
+        input_names=input_names,
+        output_names=output_names,
+        opset_version=13,
+    )
+
+    ###### *3. 使用 Lyngor 编译 conformer block 模块
+    # 编译失败 - 注释掉
+    # lyngor_build_conformer_block(myConformerBlock, model_input_size)
+
+
+def build_conformer_conv1d(encode_speech_model, model_input_size):
+    # 存储 conformer_block 中 ConformerConvolution 的 3个卷积的Relay图和Op图
+    print(">"*12, "[Debug]存储 conformer_block 中 ConformerConvolution 的 3个卷积的Relay图和Op图")
+    assert isinstance(encode_speech_model, UnitYModel), "Need encode_speech_model type is UnitYModel"
+
+    # *1. Get convolution 1d operator instantce
+    conformerBlock_instant = encode_speech_model.speech_encoder.inner.layers[0]
+    pointwise_conv1 = copy.deepcopy(conformerBlock_instant.conv.pointwise_conv1).cpu().float()
+    depthwise_conv = copy.deepcopy(conformerBlock_instant.conv.depthwise_conv).cpu().float()
+    pointwise_conv2 = copy.deepcopy(conformerBlock_instant.conv.pointwise_conv2).cpu().float()
+
+    # *2. Get input and output shape
+    """
+        输入形状:
+	    # 1次 OfflineWav2VecBertEncoderAgent 执行过程中 conv1d 的输入输出形状是固定的
+	    # 多次 OfflineWav2VecBertEncoderAgent 执行过程中 conv1d 的输入输出形状的最后一个维度是变化的(191 和 221是变化的)
+        # 一次的变化趋势：... 191 -> 207 -> 223 -> 239 ...
+	    pointwise_conv1 input shape: torch.Size([1, 1024, 191])
+        pointwise_conv1 output shape: torch.Size([1, 2048, 191])
+        depthwise_conv input shape: torch.Size([1, 1024, 221]) # pad (30, 0)
+        depthwise_conv output shape: torch.Size([1, 1024, 191])
+        pointwise_conv2 input shape: torch.Size([1, 1024, 191])
+        pointwise_conv2 output shape: torch.Size([1, 1024, 191])
+    """
+    pointwise_conv1_input_size = [1, 1024, 191]
+    depthwise_conv_input_size = [1, 1024, 221]
+    pointwise_conv2_input_size = [1, 1024, 191]
+
+    # *3. 使用 Lyngor 编译 conv1d 算子
+    # conformer_block_pointwise_conv1
+    lyngor_build_conformer_block(pointwise_conv1, pointwise_conv1_input_size, out_path = "./conformer_block_pointwise_conv1", save_graph = True)
+    msg = "conformer_block_pointwise_conv1 Lyngor 编译结束, 已存储Relay图和Op图, 继续编译这些图可能会被覆盖"
+    print(msg)
+    # import pdb; pdb.set_trace()
+    # conformer_block_depthwise_conv
+    lyngor_build_conformer_block(depthwise_conv, depthwise_conv_input_size, out_path = "./conformer_block_depthwise_conv", save_graph = True)
+    msg = "conformer_block_depthwise_conv Lyngor 编译结束, 已存储Relay图和Op图, 继续编译这些图可能会被覆盖"
+    print(msg)
+    # import pdb; pdb.set_trace()
+    # conformer_block_pointwise_conv2
+    lyngor_build_conformer_block(pointwise_conv2, pointwise_conv2_input_size, out_path = "./conformer_block_pointwise_conv2", save_graph = True)
+    msg = "conformer_block_pointwise_conv2 Lyngor 编译结束, 已存储Relay图和Op图, 继续编译这些图可能会被覆盖"
+    print(msg)
+    # import pdb; pdb.set_trace()
+    print("<"*12, "[Debug]存储 conformer_block 中 ConformerConvolution 的 3个卷积的Relay图和Op图")
+
+
+def build_UnitYEncoderAdaptor(model, model_input_size):
+    """_summary_
+
+    Args:
+        model (UnitYModel): 模型
+        model_input_size (_type_): 模型输入形状
+
+    Raises:
+        ValueError: _description_
+    """
+    import torch
+
+    print("[Debug] Build Model - class OfflineWav2VecBertEncoderAgent")
+
+    # *1. del conformer layers
+    import pdb; pdb.set_trace()
+
+    # *1. Use MyUnitYModel to fit torch.jit.trace interface.
+    mymodel = None
+    if len(model_input_size) == 1:
+        mymodel = (
+            MyUnitYModel_1Input(
+                model,
+            )
+            .to("cpu")
+            .eval()
+            .float()
+        )
+    elif len(model_input_size) == 2:
+        mymodel = (
+            MyUnitYModel_2Input(
+                model,
+            )
+            .to("cpu")
+            .eval()
+            .float()
+        )
+    else:
+        raise ValueError("model_input_size must be 1 or 2.")
+
 
     ####### *1. Use MyUnitYModel to fit torch.jit.trace interface.
 
@@ -148,7 +280,6 @@ def build_conformer_block(encode_speech_model, model_input_size):
     ###### *3. 使用 Lyngor 编译 conformer block 模块
     # 编译失败 - 注释掉
     # lyngor_build_conformer_block(myConformerBlock, model_input_size)
-
 
 def build_encode_speech(encode_speech_model, model_input_size):
     """编译encode_speech模型
@@ -360,8 +491,13 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
             copied_seqs = copy.deepcopy(seqs)
             copied_model = copy.deepcopy(self.model)
 
-            # 输出单个 conformer block 的模型结构，权重和
-            build_conformer_block(copied_model, [copied_seqs.shape])
+            # 输出单个 conformer block 的模型结构
+            # build_conformer_block(copied_model, [copied_seqs.shape])
+
+            ###### 存储 conformer_block 中 ConformerConvolution 的 3个卷积的Relay图和Op图
+            # build_conformer_conv1d(copied_model, [copied_seqs.shape])
+
+            # build_UnitYEncoderAdaptor(copied_model, [copied_seqs.shape])
 
             # build_encode_speech
             if padding_mask != None:
