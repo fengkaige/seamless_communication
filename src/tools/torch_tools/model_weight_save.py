@@ -1,3 +1,8 @@
+import copy
+import numpy as np
+import os
+
+
 def save_model_state_dict(model, weight_save_folder: str, weight_save_name: str):
     """保存模型的状态字典到文件
 
@@ -134,15 +139,48 @@ def create_directory(path):
         print(f"Directory '{path}' already exists.")
 
 
-def save_tensor(tensor, tensor_name, save_dir='tensors'):
+# def save_tensor(save_tensor, tensor_name, save_dir='tensors', show_info=True):
+#     # 创建保存目录
+#     if not os.path.exists(save_dir):
+#         os.makedirs(save_dir)
 
-    import torch
-    import numpy as np
-    import os
+#     tensor = copy.deepcopy(save_tensor).cpu()
 
+#     # 获取tensor信息
+#     shape = tensor.shape
+#     dtype = tensor.dtype
+
+#     # 构造文件名
+#     shape_str = 'x'.join(map(str, shape))
+#     dtype_str = str(dtype).split('.')[1]  # 去掉前缀 'torch.'
+#     base_filename = f"{tensor_name}_shape-{shape_str}_dtype-{dtype_str}"
+
+#     # 二进制文件名
+#     bin_filename = os.path.join(save_dir, f"{base_filename}.bin")
+
+#     # 文本文件名
+#     txt_filename = os.path.join(save_dir, f"{base_filename}.txt")
+
+#     # 保存二进制文件
+#     with open(bin_filename, 'wb') as bin_file:
+#         bin_file.write(tensor.numpy().tobytes())
+
+#     # 保存可视化的文本文件
+#     with open(txt_filename, 'w') as txt_file:
+#         # 将 tensor 转换为 NumPy 数组并写入文本文件
+#         np.savetxt(txt_file, tensor.numpy().reshape(-1), fmt='%10.5f')
+
+#     if show_info:
+#         print(f"Tensor binary file saved to {bin_filename}")
+#         print(f"Tensor text file saved to {txt_filename}")
+
+def save_tensor(tensor, tensor_name, save_dir='tensors', show_info=True):
     # 创建保存目录
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
+
+    # 将张量移动到CPU并克隆
+    tensor = tensor.cpu().clone()
 
     # 获取tensor信息
     shape = tensor.shape
@@ -159,14 +197,16 @@ def save_tensor(tensor, tensor_name, save_dir='tensors'):
     # 文本文件名
     txt_filename = os.path.join(save_dir, f"{base_filename}.txt")
 
+    # 将 tensor 转换为 NumPy 数组
+    tensor_np = tensor.numpy()
+
     # 保存二进制文件
     with open(bin_filename, 'wb') as bin_file:
-        bin_file.write(tensor.numpy().tobytes())
+        bin_file.write(tensor_np.tobytes())
 
     # 保存可视化的文本文件
-    with open(txt_filename, 'w') as txt_file:
-        # 将 tensor 转换为 NumPy 数组并写入文本文件
-        np.savetxt(txt_file, tensor.numpy().reshape(-1), fmt='%10.5f')
+    np.savetxt(txt_filename, tensor_np.reshape(-1), fmt='%10.5f')
 
-    print(f"Tensor binary file saved to {bin_filename}")
-    print(f"Tensor text file saved to {txt_filename}")
+    if show_info:
+        print(f"Tensor binary file saved to {bin_filename}")
+        print(f"Tensor text file saved to {txt_filename}")

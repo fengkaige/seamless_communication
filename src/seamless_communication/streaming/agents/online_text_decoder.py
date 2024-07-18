@@ -261,7 +261,7 @@ class MMATextDecoderAgent(OnlineTextDecoderAgent):  # type: ignore
             weight_save_name = "decode_text_weight"
 
             save_weight_of_decode_text(copied_model.cpu(), weight_save_folder, weight_save_name, linear_quantize_flag, linear_quantize_bit)
-            
+
             # del copied_model
             # del copied_target_input
             # del copied_encoder_output
@@ -500,7 +500,7 @@ def save_weight_of_decode_text(model, weight_save_folder, weight_save_name, line
     import os
     # from seamless_communication.src.tools.model_weight_save import save_model_state_dict, save_model_structure
     # from seamless_communication.src.tools.quantization import quantize_Agnent3_OfflineWav2VecBertEncoderAgent
-    from src.tools.weight_save.model_weight_save import save_model_state_dict, save_model_structure
+    from src.tools.torch_tools import save_model_state_dict, save_model_structure
     from src.tools.quantization.quantization import quantize
 
     # 提示信息
@@ -536,7 +536,7 @@ def save_input_output_text_decoder(model, target_input, padding_mask, decoder_in
         type(target_input) : torch.Tensor
         type(padding_mask) : NoneType
     """
-    from src.tools.weight_save.model_weight_save import save_tensor
+    from src.tools.torch_tools import save_tensor
     import pdb;pdb.set_trace()
     # from seamless_communication.src.tools.model_weight_save import save_tensor
     target_input, padding_mask = model.text_decoder_frontend(

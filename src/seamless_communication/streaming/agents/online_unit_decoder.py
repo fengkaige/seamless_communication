@@ -115,7 +115,7 @@ class NARUnitYUnitDecoderAgent(GenericAgent):  # type: ignore
             """
             msg = "[INFO]save nARUnitYUnitDecoderAgent"
             print(msg)
-            
+
             copied_model = copy.deepcopy(self.model)
             copied_text_seqs = copy.deepcopy(states.source_indices)
             copied_text_decoder_output = copy.deepcopy(states.source)
@@ -133,17 +133,17 @@ class NARUnitYUnitDecoderAgent(GenericAgent):  # type: ignore
             weight_save_folder = control_switch.nARUnitYUnitDecoderAgent['weight_save_folder']
             linear_quantize_flag = control_switch.nARUnitYUnitDecoderAgent['quantize_flag']
             linear_quantize_bit = control_switch.nARUnitYUnitDecoderAgent['linear_quantize_bit']
-            
+
             # 构建存储文件夹和存储名称
             weight_save_name = "decode_unit_weight"
             save_weight_of_decode_unit(copied_model.cpu(), weight_save_folder, weight_save_name, linear_quantize_flag, linear_quantize_bit)
-            
+
             # del copied_seqs
             # del copied_model
             # gc.collect()     # 执行垃圾回收，以确保及时释放内存
 
             control_switch.nARUnitYUnitDecoderAgent["save_flag"] = False
-        
+
         model_output, _, durations = self.model(
             text_decoder_output=states.source,
             text_decoder_padding_mask=None,
@@ -202,7 +202,7 @@ def save_weight_of_decode_unit(model, weight_save_folder, weight_save_name, line
     import os
     # from seamless_communication.src.tools.model_weight_save import save_model_state_dict, save_model_structure
     # from seamless_communication.src.tools.quantization import quantize_Agnent3_OfflineWav2VecBertEncoderAgent
-    from src.tools.weight_save.model_weight_save import save_model_state_dict, save_model_structure
+    from src.tools.torch_tools import save_model_state_dict, save_model_structure
     from src.tools.quantization.quantization import quantize, QuantizedLinear
 
     # 提示信息
@@ -219,7 +219,7 @@ def save_weight_of_decode_unit(model, weight_save_folder, weight_save_name, line
             bias=model.final_proj.bias,
             dtype=model.final_proj.weight.dtype,
             device=model.final_proj.weight.device
-        ) 
+        )
 
     if linear_quantize_flag == True:
         if linear_quantize_bit == 4:
@@ -242,7 +242,7 @@ def save_weight_of_decode_unit(model, weight_save_folder, weight_save_name, line
 
 
 def save_input_output_unit_decoder(model, text_seqs, encoder_input, text_decoder_padding_mask, duration_factor, film_cond_emb):
-    from src.tools.weight_save.model_weight_save import save_tensor
+    from src.tools.torch_tools import save_tensor
     # from seamless_communication.src.tools.model_weight_save import save_tensor
 
     save_dir = "./model_weight/Agent6_NARUnitYUnitDecoderAgent_input_output"
@@ -252,7 +252,7 @@ def save_input_output_unit_decoder(model, text_seqs, encoder_input, text_decoder
     encoder_output, encoder_padding_mask = model.encode(
         encoder_input, text_decoder_padding_mask
     )
-    
+
     if model.prosody_proj is not None and film_cond_emb is not None:
             import pdb;pdb.set_trace()
             encoder_output = encoder_output + model.prosody_proj(film_cond_emb)
@@ -266,6 +266,6 @@ def save_input_output_unit_decoder(model, text_seqs, encoder_input, text_decoder
     )
 
     logits = model.final_proj(decoder_output)
-    
+
     save_tensor(logits.cpu(), tensor_name="logits_output", save_dir=save_dir)
     save_tensor(durations.cpu(), tensor_name="durations_output", save_dir=save_dir)
