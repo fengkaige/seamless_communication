@@ -176,9 +176,12 @@ def build_conformer_conv1d(encode_speech_model, model_input_size):
         pointwise_conv2 input shape: torch.Size([1, 1024, 191])
         pointwise_conv2 output shape: torch.Size([1, 1024, 191])
     """
-    pointwise_conv1_input_size = [1, 1024, 191]
-    depthwise_conv_input_size = [1, 1024, 221]
-    pointwise_conv2_input_size = [1, 1024, 191]
+    # pointwise_conv1_input_size = [1, 1024, 191]
+    # depthwise_conv_input_size = [1, 1024, 221]
+    # pointwise_conv2_input_size = [1, 1024, 191]
+    pointwise_conv1_input_size = [1, 1024, 111]
+    depthwise_conv_input_size = [1, 1024, 141]
+    pointwise_conv2_input_size = [1, 1024, 111]
 
     # *3. 使用 Lyngor 编译 conv1d 算子
     # conformer_block_pointwise_conv1
@@ -491,12 +494,16 @@ class OfflineWav2VecBertEncoderAgent(NoUpdateTargetMixin, SpeechToSpeechAgent):
             copied_seqs = copy.deepcopy(seqs)
             copied_model = copy.deepcopy(self.model)
 
-            # 输出单个 conformer block 的模型结构
+            ###### 自动存储模型的细化 Golden
+            test_auto_save(copied_model, [seqs, padding_mask,])
+
+            ###### 输出单个 conformer block 的模型结构
             # build_conformer_block(copied_model, [copied_seqs.shape])
 
             ###### 存储 conformer_block 中 ConformerConvolution 的 3个卷积的Relay图和Op图
             # build_conformer_conv1d(copied_model, [copied_seqs.shape])
 
+            ###### 编译 UnitYEncoderAdaptor
             # build_UnitYEncoderAdaptor(copied_model, [copied_seqs.shape])
 
             # build_encode_speech
@@ -586,7 +593,7 @@ def save_weight_of_encode_speech(
 
     # from seamless_communication.src.tools.model_weight_save import save_model_state_dict, save_model_structure
     # from seamless_communication.src.tools.quantization import quantize_Agnent3_OfflineWav2VecBertEncoderAgent
-    from src.tools.weight_save.model_weight_save import (
+    from src.tools.torch_tools import (
         save_model_state_dict,
         save_model_structure,
     )
@@ -649,7 +656,7 @@ def save_input_output_speech_encoder(model, seqs, padding_mask):
     type(padding_mask) : NoneType
     """
     # from seamless_communication.src.tools.model_weight_save import save_tensor
-    from src.tools.weight_save.model_weight_save import save_tensor
+    from src.tools.torch_tools import save_tensor
 
     seqs, padding_mask = model.speech_encoder_frontend(seqs, padding_mask)
 
@@ -666,3 +673,21 @@ def save_input_output_speech_encoder(model, seqs, padding_mask):
     # )
     # import pdb; pdb.set_trace()
     # pdb.set_trace()
+
+
+def test_auto_save(model, inputs):
+    from src.tools.torch_tools import create_directory
+    from src.tools.torch_tools import register_save_io_hooks, register_save_io_hooks_with_index
+
+    save_path = "./test_auto_save"
+    # 创建路径
+    create_directory(save_path)
+    ### 注册存储输入输出的函数
+    # register_save_io_hooks(model, path = "./test_auto_save")
+    ### 注册存储输入输出的函数 - 文件名带有全局index
+    register_save_io_hooks_with_index(model, path = save_path)
+    # 推理模型 - 推理过程中会调用到注册的函数来存储输入和输出
+    model.encode_speech(*inputs)
+    msg = ">"*20 + "encode_speech 的 细节Golden存储完成" + "<"*20
+    print(msg)
+

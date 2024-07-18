@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../lyngor_mm"
+		},
+		{
+			"path": "../venv_seamless"
+		}
+	],
+	"settings": {}
+}

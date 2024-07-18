@@ -16,6 +16,9 @@ from simuleval.agents import TextToSpeechAgent
 from simuleval.agents.actions import ReadAction, WriteAction
 from simuleval.data.segments import SpeechSegment
 
+from config.config import ControlSwitch
+control_switch = ControlSwitch()
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s -- %(name)s: %(message)s",
@@ -58,9 +61,7 @@ class VocoderAgent(TextToSpeechAgent):  # type: ignore
 
         # >>>>>>
         import os
-        env_name = "BUILD_VOCODERAGENT"
-        BUILD_VOCODERAGENT = os.environ.get(env_name)
-        if BUILD_VOCODERAGENT == ["Flase", "True"][1]:
+        if control_switch.VocoderAgent["build_flag"]:
             print("[Debug] class NARUnitYUnitDecoderAgent :: func policy")
             show_vocoder_info(self.vocoder, u, tgt_lang, self.speaker_id)
             # import pdb; pdb.set_trace()
@@ -175,8 +176,6 @@ def build_vocoder_agent(vocoder_model,
     out_path = "./encode_speech_model"
     opt_level = 3
     lyn_module.build(lyn_model.mod, lyn_model.params, opt_level, out_path=out_path, build_mode="auto")
-
-
 
 
 # <<<<<<
